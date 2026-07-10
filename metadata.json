@@ -1,0 +1,6 @@
+{
+  "name": "Sakib Hossain - Creative Developer Portfolio",
+  "description": "A highly polished, responsive, full-stack creative portfolio for Sakib Hossain, featuring categorized skills, interactive project showcards, contact interface, and an AI chat assistant powered by Gemini.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
