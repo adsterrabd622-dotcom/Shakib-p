@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Menu, X, Sun, Moon, MessageCircle, Mail, Download } from 'lucide-react';
+import { Menu, X, Sun, Moon, MessageCircle, Mail, Download, ShieldAlert } from 'lucide-react';
 import Hero from './components/Hero';
 import Skills from './components/Skills';
 import Projects from './components/Projects';
@@ -14,6 +14,61 @@ export default function App() {
   const [isHidden, setIsHidden] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const lastScrollY = useRef(0);
+  const [showRightClickToast, setShowRightClickToast] = useState(false);
+  const [currentWarning, setCurrentWarning] = useState({
+    title: "সুরক্ষা সতর্কতা!",
+    desc: "অনুমতি ব্যতীত কন্টাক্ট ইনফো কপি বা অননুমোদিত কাজ করার অনুমতি নেই।"
+  });
+
+  const WARNING_MESSAGES = [
+    {
+      title: "সুরক্ষা সতর্কতা! 🔒",
+      desc: "অনুমতি ব্যতীত কন্টাক্ট ইনফো কপি বা অননুমোদিত কাজ করার অনুমতি নেই।"
+    },
+    {
+      title: "আরে! রাইট ক্লিক নিষেধ 😉",
+      desc: "আমার ওয়েবসাইটে রাইট-ক্লিক ব্লক করা আছে বস! সরাসরি কথা বলুন।"
+    },
+    {
+      title: "কপি করার চেষ্টা? 🤫",
+      desc: "কোনো কন্টেন্ট বা কোড কপি করার জন্য সাকিবের বিশেষ অনুমতি প্রয়োজন!"
+    },
+    {
+      title: "সরাসরি যোগাযোগ করুন 🤝",
+      desc: "কপি-পেস্ট না করে সরাসরি নিচে দেয়া সামাজিক মাধ্যমে মেসেজ পাঠান।"
+    },
+    {
+      title: "সোর্স কোড লকড! 💻",
+      desc: "সোর্স কোড বা কন্টেন্ট চুরি করার কোনো সুযোগ নেই ভাইয়া!"
+    },
+    {
+      title: "অননুমোদিত প্রবেশ নিষেধ 🚫",
+      desc: "এই ওয়েবসাইটের ডিজাইন এবং কন্টেন্ট সম্পূর্ণ কপিরাইট সংরক্ষিত।"
+    }
+  ];
+
+  // Disable right-click globally
+  useEffect(() => {
+    const handleContextMenu = (e: MouseEvent) => {
+      e.preventDefault();
+      const randomIndex = Math.floor(Math.random() * WARNING_MESSAGES.length);
+      setCurrentWarning(WARNING_MESSAGES[randomIndex]);
+      setShowRightClickToast(true);
+    };
+
+    document.addEventListener('contextmenu', handleContextMenu);
+    return () => document.removeEventListener('contextmenu', handleContextMenu);
+  }, []);
+
+  // Auto-hide right-click toast notification
+  useEffect(() => {
+    if (showRightClickToast) {
+      const timer = setTimeout(() => {
+        setShowRightClickToast(false);
+      }, 3000);
+      return () => clearTimeout(timer);
+    }
+  }, [showRightClickToast]);
 
   useEffect(() => {
     const handleScroll = () => {
@@ -49,11 +104,11 @@ export default function App() {
     setIsMobileMenuOpen(false);
     const element = document.getElementById(id);
     if (element) {
-      const offset = 80; // Offset for fixed navbar height
+      const offset = id === 'contact' ? 40 : 80; // Smaller offset for contact to bring it fully into view
       const elementPosition = element.getBoundingClientRect().top + window.scrollY;
       const offsetPosition = elementPosition - offset;
       window.scrollTo({
-        top: offsetPosition,
+        top: id === 'contact' ? Math.min(offsetPosition, document.documentElement.scrollHeight) : offsetPosition,
         behavior: 'smooth'
       });
     }
@@ -155,6 +210,29 @@ export default function App() {
           </div>
         </div>
       </footer>
+
+      {/* Right Click Prevention Toast Notification */}
+      <AnimatePresence>
+        {showRightClickToast && (
+          <motion.div
+            initial={{ opacity: 0, y: 50, scale: 0.9, x: '-50%' }}
+            animate={{ opacity: 1, y: 0, scale: 1, x: '-50%' }}
+            exit={{ opacity: 0, y: 20, scale: 0.9, x: '-50%' }}
+            transition={{ type: 'spring', damping: 25, stiffness: 350 }}
+            className="fixed bottom-10 left-1/2 z-50 flex items-center gap-3.5 px-5 py-4 bg-zinc-900/95 dark:bg-white text-zinc-100 dark:text-zinc-900 rounded-2xl border border-zinc-800 dark:border-zinc-200/30 shadow-2xl backdrop-blur-xl w-[90%] max-w-sm sm:max-w-md select-none font-bengali pointer-events-none"
+          >
+            <div className="w-10 h-10 rounded-xl bg-red-500/10 text-red-500 dark:text-red-600 flex items-center justify-center shrink-0">
+              <ShieldAlert className="w-5.5 h-5.5 animate-pulse" />
+            </div>
+            <div>
+              <p className="text-xs sm:text-sm font-black text-red-400 dark:text-red-600 mb-0.5">{currentWarning.title}</p>
+              <p className="text-[11px] sm:text-xs text-zinc-350 dark:text-zinc-600 font-medium leading-relaxed">
+                {currentWarning.desc}
+              </p>
+            </div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </div>
   );
 }

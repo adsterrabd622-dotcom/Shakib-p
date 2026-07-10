@@ -1,6 +1,6 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'motion/react';
-import { ArrowRight, Globe, LayoutTemplate, Megaphone, Play } from 'lucide-react';
+import { ArrowRight, Globe, LayoutTemplate, Megaphone, Play, Clock, Calendar } from 'lucide-react';
 
 interface HeroProps {
   onExploreSkills: () => void;
@@ -8,6 +8,41 @@ interface HeroProps {
 }
 
 export default function Hero({ onExploreSkills, onContact }: HeroProps) {
+  const [currentTime, setCurrentTime] = useState(new Date());
+
+  useEffect(() => {
+    const timer = setInterval(() => {
+      setCurrentTime(new Date());
+    }, 1000);
+    return () => clearInterval(timer);
+  }, []);
+
+  const getBengaliDateTime = (date: Date) => {
+    const bengaliDigits = ['০', '১', '২', '৩', '৪', '৫', '৬', '৭', '৮', '৯'];
+    const toBn = (num: number | string) => num.toString().split('').map(d => bengaliDigits[parseInt(d, 10)] ?? d).join('');
+    
+    const hoursNum = date.getHours();
+    const minutesStr = date.getMinutes().toString().padStart(2, '0');
+    const secondsStr = date.getSeconds().toString().padStart(2, '0');
+    const displayHours = hoursNum % 12 || 12;
+    const hoursStr = displayHours.toString().padStart(2, '0');
+    const ampm = hoursNum >= 12 ? 'PM' : 'AM';
+
+    const days = ['রবিবার', 'সোমবার', 'মঙ্গলবার', 'বুধবার', 'বৃহস্পতিবার', 'শুক্রবার', 'শনিবার'];
+    const months = ['জানুয়ারি', 'ফেব্রুয়ারি', 'মার্চ', 'এপ্রিল', 'মে', 'জুন', 'জুলাই', 'আগস্ট', 'সেপ্টেম্বর', 'অক্টোবর', 'নভেম্বর', 'ডিসেম্বর'];
+    
+    const dayName = days[date.getDay()];
+    const dateNum = toBn(date.getDate());
+    const monthName = months[date.getMonth()];
+    const yearNum = toBn(date.getFullYear());
+    
+    const timeString = `${hoursStr}:${minutesStr}:${secondsStr} ${ampm}`;
+    const dateString = `${dayName}, ${dateNum} ${monthName}, ${yearNum}`;
+    
+    return { timeString, dateString };
+  };
+
+  const { timeString, dateString } = getBengaliDateTime(currentTime);
 
   return (
     <section id="home" className="relative min-h-screen flex flex-col justify-center bg-[#f4f7fb] dark:bg-[#050505] pt-28 md:pt-36 pb-4 md:pb-12 overflow-hidden transition-colors duration-300">
@@ -139,6 +174,24 @@ export default function Hero({ onExploreSkills, onContact }: HeroProps) {
                  </svg>
               </motion.div>
            </div>
+
+           {/* Live Real-time Date and Time Widget under the photo */}
+           <motion.div 
+             initial={{ opacity: 0, y: 15 }}
+             animate={{ opacity: 1, y: 0 }}
+             transition={{ duration: 0.6, delay: 0.4 }}
+             className="inline-flex flex-wrap items-center justify-center gap-3 bg-white/80 dark:bg-zinc-900/80 backdrop-blur-md px-4 py-2.5 rounded-2xl border border-zinc-200/50 dark:border-zinc-800/80 shadow-md select-none z-20 mt-4"
+           >
+             <div className="flex items-center gap-1.5 text-[#0a46b5] dark:text-blue-400 text-xs md:text-sm font-semibold">
+               <Clock className="w-3.5 h-3.5 animate-pulse" />
+               <span className="font-mono tracking-wider tabular-nums text-xs md:text-sm">{timeString}</span>
+             </div>
+             <span className="text-zinc-300 dark:text-zinc-700">|</span>
+             <div className="flex items-center gap-1.5 text-zinc-600 dark:text-zinc-300 text-xs md:text-sm font-medium">
+               <Calendar className="w-3.5 h-3.5" />
+               <span className="font-bengali">{dateString}</span>
+             </div>
+           </motion.div>
         </div>
       </div>
       
