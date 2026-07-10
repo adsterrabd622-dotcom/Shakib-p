@@ -27,7 +27,9 @@
 }
 
 /* Utilities for smooth typography */
-html {
+html, body {
   scroll-behavior: smooth;
   font-feature-settings: "cv02", "cv03", "cv04", "cv11";
+  overflow-x: hidden;
+  max-width: 100%;
 }

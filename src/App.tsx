@@ -115,7 +115,7 @@ export default function App() {
   };
 
   return (
-    <div className="min-h-screen bg-white dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans antialiased selection:bg-teal-500/30 selection:text-teal-200">
+    <div className="min-h-screen w-full overflow-x-hidden bg-white dark:bg-[#050505] text-zinc-900 dark:text-zinc-100 font-sans antialiased selection:bg-teal-500/30 selection:text-teal-200">
       
       {/* Navigation Header */}
       <nav 
