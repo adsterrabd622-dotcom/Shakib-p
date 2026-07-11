@@ -6,7 +6,7 @@ export default function Contact() {
   const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!formData.name || !formData.phone || !formData.message) {
       setStatus('error');
@@ -14,11 +14,30 @@ export default function Contact() {
     }
 
     setStatus('submitting');
-    // Simulate API request delay
-    setTimeout(() => {
-      setStatus('success');
-      setFormData({ name: '', phone: '', message: '' });
-    }, 1500);
+    try {
+      const response = await fetch('/api/contact', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        throw new Error('Network response was not ok');
+      }
+
+      const data = await response.json();
+      if (data.success) {
+        setStatus('success');
+        setFormData({ name: '', phone: '', message: '' });
+      } else {
+        throw new Error(data.error || 'Failed to send message');
+      }
+    } catch (err) {
+      console.error('Contact form error:', err);
+      setStatus('error');
+    }
   };
 
   return (

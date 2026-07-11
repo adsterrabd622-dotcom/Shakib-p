@@ -92,6 +92,53 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// Send contact message to Telegram Bot (@lovemonetag_bot with Chat ID 7731349577)
+app.post('/api/contact', async (req, res) => {
+  try {
+    const { name, phone, message } = req.body;
+    if (!name || !phone || !message) {
+      return res.status(400).json({ error: 'All fields (name, phone, message) are required' });
+    }
+
+    const token = process.env.TELEGRAM_BOT_TOKEN || '8107974096:AAHSkNKdEtW_rLawGnAqkwriJHop8LUJP-g';
+    const chatId = process.env.TELEGRAM_CHAT_ID || '7731349577';
+
+    const formattedText = `📩 *নতুন পোর্টফোলিও মেসেজ*\n\n👤 *নাম:* ${name}\n📞 *ফোন নম্বর:* ${phone}\n💬 *মেসেজ:* ${message}`;
+
+    if (!token) {
+      console.log('--- Telegram Message Simulation ---');
+      console.log(`Bot: @lovemonetag_bot`);
+      console.log(`Chat ID: ${chatId}`);
+      console.log(`Content:\n${formattedText}`);
+      console.log('Please define TELEGRAM_BOT_TOKEN in your environment/secrets to send live Telegram notifications.');
+      console.log('-----------------------------------');
+      return res.json({ success: true, simulated: true, message: 'Message simulated (Telegram Bot Token not configured)' });
+    }
+
+    const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+    const response = await fetch(telegramUrl, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        chat_id: chatId,
+        text: formattedText,
+        parse_mode: 'Markdown',
+      }),
+    });
+
+    const data: any = await response.json();
+    if (!data.ok) {
+      console.error('Telegram API error:', data);
+      return res.status(500).json({ error: 'Telegram API returned an error', details: data.description });
+    }
+
+    res.json({ success: true });
+  } catch (error: any) {
+    console.error('Failed to send Telegram message:', error);
+    res.status(500).json({ error: 'An internal error occurred', details: error.message });
+  }
+});
+
 // Setup Vite middleware in dev or static files in production
 async function startServer() {
   if (process.env.NODE_ENV !== 'production') {
