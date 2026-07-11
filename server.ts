@@ -92,28 +92,43 @@ app.post('/api/chat', async (req, res) => {
   }
 });
 
+// Helper function to escape HTML special characters for safe Telegram delivery
+function escapeHtml(text: string): string {
+  if (!text) return '';
+  return text
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;');
+}
+
 // Send contact message to Telegram Bot (@lovemonetag_bot with Chat ID 7731349577)
 app.post('/api/contact', async (req, res) => {
   try {
     const { name, phone, message } = req.body;
     if (!name || !phone || !message) {
-      return res.status(400).json({ error: 'All fields (name, phone, message) are required' });
+      return res.status(400).json({ error: 'সবগুলো ঘর পূরণ করা আবশ্যক' });
     }
 
-    const token = process.env.TELEGRAM_BOT_TOKEN || '8107974096:AAHSkNKdEtW_rLawGnAqkwriJHop8LUJP-g';
-    const chatId = process.env.TELEGRAM_CHAT_ID || '7731349577';
-
-    const formattedText = `📩 *নতুন পোর্টফোলিও মেসেজ*\n\n👤 *নাম:* ${name}\n📞 *ফোন নম্বর:* ${phone}\n💬 *মেসেজ:* ${message}`;
-
-    if (!token) {
-      console.log('--- Telegram Message Simulation ---');
-      console.log(`Bot: @lovemonetag_bot`);
-      console.log(`Chat ID: ${chatId}`);
-      console.log(`Content:\n${formattedText}`);
-      console.log('Please define TELEGRAM_BOT_TOKEN in your environment/secrets to send live Telegram notifications.');
-      console.log('-----------------------------------');
-      return res.json({ success: true, simulated: true, message: 'Message simulated (Telegram Bot Token not configured)' });
+    // Trim token and fallback to provided token if empty
+    let token = process.env.TELEGRAM_BOT_TOKEN;
+    if (!token || token.trim() === '') {
+      token = '8107974096:AAHSkNKdEtW_rLawGnAqkwriJHop8LUJP-g';
+    } else {
+      token = token.trim();
     }
+
+    let chatId = process.env.TELEGRAM_CHAT_ID;
+    if (!chatId || chatId.trim() === '') {
+      chatId = '7731349577';
+    } else {
+      chatId = chatId.trim();
+    }
+
+    const escapedName = escapeHtml(name);
+    const escapedPhone = escapeHtml(phone);
+    const escapedMessage = escapeHtml(message);
+
+    const formattedText = `📩 <b>নতুন পোর্টফোলিও মেসেজ</b>\n\n👤 <b>নাম:</b> ${escapedName}\n📞 <b>ফোন নম্বর:</b> ${escapedPhone}\n💬 <b>মেসেজ:</b> ${escapedMessage}`;
 
     const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
     const response = await fetch(telegramUrl, {
@@ -122,20 +137,20 @@ app.post('/api/contact', async (req, res) => {
       body: JSON.stringify({
         chat_id: chatId,
         text: formattedText,
-        parse_mode: 'Markdown',
+        parse_mode: 'HTML',
       }),
     });
 
     const data: any = await response.json();
     if (!data.ok) {
       console.error('Telegram API error:', data);
-      return res.status(500).json({ error: 'Telegram API returned an error', details: data.description });
+      return res.status(500).json({ error: 'টেলিগ্রাম সার্ভারে মেসেজ পাঠানো ব্যর্থ হয়েছে', details: data.description });
     }
 
     res.json({ success: true });
   } catch (error: any) {
     console.error('Failed to send Telegram message:', error);
-    res.status(500).json({ error: 'An internal error occurred', details: error.message });
+    res.status(500).json({ error: 'মেসেজ প্রসেস করতে অভ্যন্তরীণ সমস্যা হয়েছে', details: error.message });
   }
 });
 

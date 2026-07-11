@@ -5,15 +5,18 @@ import { Phone, Mail, Send, CheckCircle2, AlertCircle } from 'lucide-react';
 export default function Contact() {
   const [formData, setFormData] = useState({ name: '', phone: '', message: '' });
   const [status, setStatus] = useState<'idle' | 'submitting' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState('');
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.name || !formData.phone || !formData.message) {
+    if (!formData.name.trim() || !formData.phone.trim() || !formData.message.trim()) {
+      setErrorMessage('অনুগ্রহ করে সবগুলো ঘর সঠিকভাবে পূরণ করুন।');
       setStatus('error');
       return;
     }
 
     setStatus('submitting');
+    setErrorMessage('');
     try {
       const response = await fetch('/api/contact', {
         method: 'POST',
@@ -23,19 +26,16 @@ export default function Contact() {
         body: JSON.stringify(formData),
       });
 
-      if (!response.ok) {
-        throw new Error('Network response was not ok');
-      }
-
-      const data = await response.json();
-      if (data.success) {
+      const data = await response.json().catch(() => ({}));
+      if (response.ok && data.success) {
         setStatus('success');
         setFormData({ name: '', phone: '', message: '' });
       } else {
-        throw new Error(data.error || 'Failed to send message');
+        throw new Error(data.error || 'টেলিগ্রাম সার্ভারে মেসেজ পাঠানো সম্ভব হয়নি। দয়া করে আবার চেষ্টা করুন।');
       }
-    } catch (err) {
+    } catch (err: any) {
       console.error('Contact form error:', err);
+      setErrorMessage(err.message || 'মেসেজ পাঠানো সম্ভব হয়নি। দয়া করে আবার চেষ্টা করুন।');
       setStatus('error');
     }
   };
@@ -167,8 +167,8 @@ export default function Contact() {
 
               {status === 'error' && (
                 <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="flex items-center gap-2 text-red-500 text-sm font-bengali">
-                  <AlertCircle className="w-4 h-4" />
-                  <span>অনুগ্রহ করে সবগুলো ঘর সঠিকভাবে পূরণ করুন।</span>
+                  <AlertCircle className="w-4.5 h-4.5 shrink-0" />
+                  <span>{errorMessage}</span>
                 </motion.div>
               )}
 
