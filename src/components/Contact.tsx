@@ -18,20 +18,62 @@ export default function Contact() {
     setStatus('submitting');
     setErrorMessage('');
     try {
-      const response = await fetch('/api/contact', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify(formData),
-      });
+      let sentSuccessfully = false;
 
-      const data = await response.json().catch(() => ({}));
-      if (response.ok && data.success) {
+      // 1. Attempt server delivery first (if available)
+      try {
+        const response = await fetch('/api/contact', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify(formData),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.success) {
+          sentSuccessfully = true;
+        }
+      } catch (localErr) {
+        console.warn('Backend server not available, trying direct Telegram fallback...', localErr);
+      }
+
+      // 2. Fallback to direct client-side Telegram API if server is not available (e.g. static Vercel host)
+      if (!sentSuccessfully) {
+        const token = '8107974096:AAHSkNKdEtW_rLawGnAqkwriJHop8LUJP-g';
+        const chatId = '7731349577';
+        
+        // Escape HTML special characters for safe Telegram parsing
+        const escapedName = formData.name.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const escapedPhone = formData.phone.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+        const escapedMessage = formData.message.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;');
+
+        const text = `📩 <b>নতুন পোর্টফোলিও মেসেজ (Direct Client)</b>\n\n👤 <b>নাম:</b> ${escapedName}\n📞 <b>ফোন নম্বর:</b> ${escapedPhone}\n💬 <b>মেসেজ:</b> ${escapedMessage}`;
+
+        const telegramUrl = `https://api.telegram.org/bot${token}/sendMessage`;
+        const response = await fetch(telegramUrl, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            chat_id: chatId,
+            text: text,
+            parse_mode: 'HTML',
+          }),
+        });
+
+        const data = await response.json().catch(() => ({}));
+        if (response.ok && data.ok) {
+          sentSuccessfully = true;
+        } else {
+          throw new Error(data.description || 'টেলিগ্রাম সার্ভারে সরাসরি মেসেজ পাঠানো ব্যর্থ হয়েছে।');
+        }
+      }
+
+      if (sentSuccessfully) {
         setStatus('success');
         setFormData({ name: '', phone: '', message: '' });
       } else {
-        throw new Error(data.error || 'টেলিগ্রাম সার্ভারে মেসেজ পাঠানো সম্ভব হয়নি। দয়া করে আবার চেষ্টা করুন।');
+        throw new Error('মেসেজ পাঠানো সম্ভব হয়নি। দয়া করে আবার চেষ্টা করুন।');
       }
     } catch (err: any) {
       console.error('Contact form error:', err);
